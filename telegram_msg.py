@@ -1611,7 +1611,6 @@ try:
     while True:
         time.sleep(10)
         if not t.is_alive():
-            telegram_bot.sendMessage(31980138, "Thread is dead")
             telegram_bot.sendMessage(653288463, "Thread is dead")
             log("thread died")
             break
