@@ -1,9 +1,9 @@
 version: '3.7'
 services:
-  telepot:
-    image: pnallin/telepot:12-7
+  telepot_disc:
+    image: gfrsco/telegrambot:1.0.5
     volumes:
-      - /storage/services/repository/telegrampy:/telegram
+      - /storage/services/repository/telegrampydisc:/telegram
     networks:
       hostnet: {}
     #command: "tail -f /dev/null"
@@ -21,7 +21,9 @@ services:
       restart_policy:
         condition: on-failure
     secrets:
-      - TELEGRAM_BOT_TOKEN
+      - TELEGRAM_TESTBOT_TOKEN
+      - TELEGRAM_TESTBOT_USER
+      - TELEGRAM_TESTBOT_PASS
     logging:
       driver: "json-file"
       options:
@@ -29,7 +31,11 @@ services:
         max-file: "5"
 
 secrets:
-  TELEGRAM_BOT_TOKEN:
+  TELEGRAM_TESTBOT_TOKEN:
+    external: true
+  TELEGRAM_TESTBOT_USER:
+    external: true
+  TELEGRAM_TESTBOT_PASS:
     external: true
 
 networks:

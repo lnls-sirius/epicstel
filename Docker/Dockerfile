@@ -15,4 +15,4 @@ RUN pip3 install -r requirements.txt
 EXPOSE 80
 
 # Container init
-CMD python3 /telegram/tmsg.py $(cat /run/secrets/TELEGRAM_BOT_TOKEN)
+CMD python3 /telegram/telegram_msg.py $(cat /run/secrets/TELEGRAM_TESTBOT_TOKEN) $(cat /run/secrets/TELEGRAM_TESTBOT_USER) $(cat /run/secrets/TELEGRAM_TESTBOT_PASS)

@@ -6,13 +6,17 @@ import epics
 # Python module to manage CSV files
 import pandas
 # Auxiliary modules
-import time
-import sys
+import time, datetime, requests, sys, json
 from threading import Thread, Lock
 
-
+with open('config.json') as json_config:
+    config = json.load(json_config)
 # Defines Telegram Bot with unique Bot TOKEN
 telegram_bot = telepot.Bot(sys.argv[1])
+
+# Defines API credentials
+api_user = sys.argv[2]
+api_pass = sys.argv[3]
 
 # Defines authorized personnel as global dictionaries
 global authorized_personnel, teams
@@ -29,6 +33,7 @@ global mutex_PV, mutex_gp, mutex_user
 mutex_PV = Lock()
 mutex_gp = Lock()
 mutex_user = Lock()
+mutex_csv = Lock()
 
 
 def send(chat_id, text_or_document, type, caption=None, parse_mode=None, disable_web_page_preview=None,
@@ -81,7 +86,6 @@ def log(occurrence="", message="", user="", **kwargs):
     log_file = open('telegram_bot.log', 'a')
     log_file.write(log_msg)
     log_file.close()
-
 
 def update_personnel():
     # Imports the authorized personnel from csv file
@@ -398,6 +402,7 @@ def update_PV_mon():
 
     df = pandas.DataFrame(groupscsv_to_monitorcsv).sort_values(by=['PVGroups']).reset_index(drop=True)
     # Copies the PVs from groups.csv to monitor_info.csv
+    mutex_csv.acquire()
     monitor_info_df = pandas.read_csv("monitor_info.csv", keep_default_na=False)
     monitor_info_df = monitor_info_df.append(df, sort=False).drop_duplicates(subset=['PVNames', 'PVGroups'], keep='first').sort_values(by=['PVGroups']).reset_index(drop=True)
     # Guarantees user is subscribed to every PV in every PV group
@@ -421,6 +426,7 @@ def update_PV_mon():
     # Imports the updated csv file as a DataFrame with multiple Indexes:
     # PVGroups and PVNames, to avoid problems with same PVs belonging to different groups
     monitor_info_df = pandas.read_csv("monitor_info.csv", keep_default_na=False, index_col=[1, 0])
+    mutex_csv.release()
     # Importing DataFrame columns
     chat_id_column = monitor_info_df["ChatIDs"]
     max_column = monitor_info_df["Max"]
@@ -694,6 +700,7 @@ def remove_group(group_str):
     global PV_groups, PV_mon, PV_values, mutex_gp, mutex_PV
     # Imports groups csv and monitor_info csv
     groups_df = pandas.read_csv("groups.csv", keep_default_na=False, index_col=[0])
+    mutex_csv.acquire()
     monitor_info_df = pandas.read_csv("monitor_info.csv", keep_default_na=False, index_col=[0, 1])
     to_pop_list = group_str.split(" ")
     # logs request
@@ -746,6 +753,7 @@ def remove_group(group_str):
     mutex_PV.release()
     mutex_gp.release()
     monitor_info_df.to_csv("monitor_info.csv")
+    muter_csv.release()
     groups_df.to_csv("groups.csv")
     # update all dictionaries after this
     return answer, errors
@@ -888,6 +896,7 @@ def subscribe(desired_groups, user):
     # Imports all_goups dictionaries to verify existence of desired group
     global PV_groups
     # Imports monitor_info as DataFrame and it's columns
+    mutex_csv.acquire()
     monitor_info_df = pandas.read_csv("monitor_info.csv", keep_default_na=False)
     groups_column = monitor_info_df["PVGroups"]
     chat_id_column = monitor_info_df["ChatIDs"]
@@ -973,6 +982,7 @@ def subscribe(desired_groups, user):
         errors = "Looks like you are already subscribed to the specified groups {}" .format(desired_groups)
     monitor_info_df["ChatIDs"] = chat_id_column
     monitor_info_df.to_csv("monitor_info.csv", index=False)
+    mutex_csv.release()
     update_PV_mon()
     return return_message, errors
 
@@ -982,6 +992,7 @@ def unsubscribe(desired_groups, user):
 
     global PV_groups
     # Imports monitor info DataFrame
+    mutex_csv.acquire()
     monitor_info_df = pandas.read_csv("monitor_info.csv", keep_default_na=False)
     groups_column = monitor_info_df["PVGroups"]
     chat_id_column = monitor_info_df["ChatIDs"]
@@ -1037,6 +1048,7 @@ def unsubscribe(desired_groups, user):
 
     # Pushes changes to CSV file
     monitor_info_df.to_csv("monitor_info.csv", index=False)
+    mutex_csv.release()
     update_PV_mon()
     return answer, errors
 
@@ -1059,7 +1071,8 @@ def action(msg):
 /addpvgroup (Group) (PVs) (Maximum limit) (Minimum limit) (Timeout) - requests administrators to register a new PV Group
 /addpv (Group) (PV) (Maximum limit) (Minimum limit) - requests administrators to register a new PV to an existing PV Group or alter a PV Limit
 /forward (Message) - forwards the specified message to BOT administrators
-/isalive - informs if monitoring is enabled"""
+/isalive - informs if monitoring is enabled
+/getstatus (PVs) - gets status and archiving information for PVs (supports filters)"""
         team_adm_commands = """
 
 Team Administrator commands:
@@ -1568,6 +1581,21 @@ Try again using the format: /forward (chatID) (message)"""
                     answer = str(t.is_alive())
                     send(chat_id, answer, type='message')
 
+                # Print out PV status
+                elif command[:11] == "/getstatus ":
+                    pvs = command[11:].split(" ")
+
+                    for pv in pvs:
+                        pv_statuses = requests.get("{}/getPVStatus?pv={}&reporttype=short".format(config["mgmtURL"], pv), verify=False).json()
+
+                        for status in pv_statuses:
+                            status_msg = "Status for {}: {}".format(status["pvName"], status["status"])
+
+                            if status["status"] == "Being archived":
+                                status_msg += "\nConnected: {}\nAppliance: {}\nLast Event: {}\n".format(status["connectionState"], status["appliance"], status["lastEvent"])
+
+                            send(chat_id, status_msg, type='message')
+
                 # Unknown command message
                 else:
                     log("Unknown Command", command, user, timestamp=timestamp)
@@ -1588,6 +1616,106 @@ Try again using the format: /forward (chatID) (message)"""
     # except Exception as exception:
     #     log(type(exception), exception)
 
+def login(username, password):
+    session = requests.Session()
+    response = session.post("{}/login".format(config["mgmtURL"]), data = { "username" : username, "password" : password }, verify = False)
+
+    if ("authenticated" in response.text):
+        return(session)
+    return(None)
+
+def convert_time(seconds):
+    if seconds < 3600:
+        return "less than an hour"
+
+    days = seconds // 86400
+    hours = seconds % 86400 // 3600
+    time_string = ""
+
+    if days > 0:
+        time_string = "{} {}".format(days, "days" if days > 1 else "day")
+    if hours > 0:
+        time_string += " " if days > 0 else ""
+        time_string += "{} {}".format(hours, "hours" if hours > 1 else "hour")
+
+    return time_string
+
+#Monitors for disconnected PVs and pauses them if they've been disconnected long enough
+def monitor_disconnected():
+    warn_times = config["warnTimes"] #Times in seconds for 1 week, 2 days and 10 days.
+
+    while(True):
+        #Used to guarantee PVs are truly disconnected, as the bot failing to perform a CAGET request could mean other issues.
+        disconnected_PVs = requests.get("{}/getCurrentlyDisconnectedPVs".format(config["mgmtURL"]), verify=False).json()
+        session = login(api_user, api_pass)
+
+        mutex_csv.acquire()
+        monitor_info_df = pandas.read_csv("monitor_info.csv", keep_default_na=False)
+        current_time = datetime.datetime.now()-datetime.timedelta(hours=3)
+
+        data_changed = False
+
+        for discPV in disconnected_PVs:
+            index = monitor_info_df[monitor_info_df['PVNames']==discPV['pvName']].index.values
+
+            if(len(index) == 1):
+                last_event = datetime.datetime.fromtimestamp(float(discPV['noConnectionAsOfEpochSecs']))-datetime.timedelta(hours=3)
+
+                if monitor_info_df.at[index[0], 'DisconnectDate'] == "":
+                    last_fetch = last_event
+                else:
+                    last_fetch = datetime.datetime.strptime(monitor_info_df.at[index[0], 'DisconnectDate'], "%Y-%m-%d %H:%M:%S")
+
+                if(last_event.timestamp() > last_fetch.timestamp()):
+                    monitor_info_df.at[index[0], 'DisconnectDate'] = ""
+                    monitor_info_df.at[index[0], 'WarningCount'] = 0
+
+                    data_changed = True
+                    continue
+
+                warning_count = int(monitor_info_df.at[index[0], 'WarningCount'])
+                next_warn = warn_times[warning_count]
+
+                time_dif = current_time.timestamp() - last_fetch.timestamp()
+
+
+                if (time_dif > next_warn):
+                    ChatIDs = monitor_info_df.at[index[0], 'ChatIDs'].split(';')
+                    rem_time = warn_times[2] if warning_count == 1 else warn_times[1] + warn_times[2]
+
+                    if warning_count > 1:
+                        session.get("{}/pauseArchivingPV?pv={}".format(config["mgmtURL"], discPV['pvName']))
+                        warning_msg = 'PV *{}* has been archived, as it has been inactive for a period longer than {}.'.format(discPV['pvName'], convert_time(rem_time + warn_times[0]))
+
+                        monitor_info_df.at[index[0], 'DisconnectDate'] = ""
+                        monitor_info_df.at[index[0], 'WarningCount'] = 0
+
+                        data_changed = True
+                    else:
+                        last_con_date = last_event.strftime("%Y-%m-%d %H:%M:%S") if discPV['lastKnownEvent'] != "Never" else "Never Connected"
+
+                        warning_msg = '''PV *{}* is disconnected since *{}*.
+There are *{}* remaining until the PV is considered inactive and archived.'''.format(discPV['pvName'], last_con_date, convert_time(rem_time))
+                        print(convert_time(rem_time))
+                        print(rem_time)
+                        monitor_info_df.at[index[0], 'WarningCount'] = warning_count + 1
+                        monitor_info_df.at[index[0], 'DisconnectDate'] = current_time.strftime("%Y-%m-%d %H:%M:%S")
+
+                        data_changed = True
+                    for ChatID in ChatIDs:
+                        if ChatID in teams:
+                            for ind_id in teams[ChatID]:
+                                print("Sent message to {}".format(ind_id))
+                                send(ind_id, warning_msg, type='message', parse_mode='markdown')
+                        else:
+                            send(ChatID[ChatID.index(':')+1:], warning_msg, type='message', parse_mode='markdown')
+                            print("Sent message to {}".format(ChatID[ChatID.index(':')+1:]))
+
+                    print("Warn {} sent. Last fetch date: {}. Warn time: {}".format(warning_count, last_fetch, next_warn))
+        if(data_changed):
+            monitor_info_df.to_csv('monitor_info.csv', index=False)
+        mutex_csv.release()
+        time.sleep(60)
 
 log(message="Initiating BOT")
 log(message="Updating dictionaries")
@@ -1599,18 +1727,20 @@ update_PV_mon()
 
 log(message="Initiating monitor thread")
 t = Thread(target=monitor, daemon=True)
+t_disc = Thread(target=monitor_disconnected, daemon=True)
 
 log(message="Initiating command handler")
 # Initiates action function as a Thread
 MessageLoop(telegram_bot, action).run_as_thread()
 print("\n\n\n\n\n", telegram_bot.getMe(), "Operating....\n\n")
 
-
 try:
     t.start()
+    t_disc.start()
     while True:
         time.sleep(10)
         if not t.is_alive():
+            telegram_bot.sendMessage(31980138, "Thread is dead")
             telegram_bot.sendMessage(653288463, "Thread is dead")
             log("thread died")
             break
