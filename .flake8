@@ -1,0 +1,15 @@
+[flake8]
+max-line-length = 119
+max-complexity = 18
+exclude =
+    .git,
+    .tox,
+    old,
+    __pycache__,
+    data,
+    docker,
+    *.log,
+    README.md,
+    venv,
+    static_text.py
+ignore=W503, E203

@@ -1,0 +1,11 @@
+[tool.black]
+line-length = 119
+target-version = ['py37']
+include = '\.pyi?$'
+
+[build-system]
+requires = [
+    "setuptools >= 35.0.2",
+    "setuptools_scm >= 2.0.0, <3"
+]
+build-backend = "setuptools.build_meta"

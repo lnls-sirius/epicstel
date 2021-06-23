@@ -1,0 +1,201 @@
+{
+  "warn_times": [
+    604800, 172800, 864000
+  ],
+  "user_commands": {
+    "start": {
+      "func": "get_help",
+      "type": "info",
+      "desc": "show bot functions"
+    },
+    "help": {
+      "func": "get_help", 
+      "type": "info",
+      "desc": "show bot functions"
+    },
+    "checkme": {
+      "func": "get_user_info",
+      "type": "info",
+      "desc": "returns your information"
+    },
+    "isalive": {
+        "func": "get_is_alive",
+        "type": "info",
+        "desc": "informs if monitoring is enabled"
+    },
+    "caget": {
+      "func": "caget",
+      "type": "info",
+      "desc": "get process variables values",
+      "syntax": "(PVs)"
+    },
+    "checkstatus": {
+        "func": "get_status",
+        "type": "info",
+        "desc": "gets status and archiving info (supports GLOB filters)",
+        "syntax": "(PVs)"
+    },
+    "plot": {
+      "func": "plot", 
+      "type": "info",
+      "desc": "plots out data for given PVs. Time format: YYYY/MM/DD-HH:MM:SS or YYYY/MM/DD",
+      "syntax": "(PVs) (start time - opt.) (end time - opt.)"
+    },
+    "forward": {
+        "func": "forward",
+        "type": "info",
+        "desc": "forwards the specified message to bot administrators",
+        "syntax": "(Message)"
+    },
+    "pvgroups": {
+      "func": "get_pv_groups",
+      "type": "info",
+      "desc": "sends a list with registered PV group names"
+    },
+    "checkgp": {
+      "func": "get_group_info",
+      "type": "info",
+      "desc": "returns PV groups' information",
+      "syntax": "(PVs)"
+    },
+    "subscribe": {
+      "func": "subscribe",
+      "type": "user",
+      "desc": "subscribes you to the requested groups",
+      "syntax": "(Groups)"
+    },
+    "unsubscribe": {
+      "func": "unsubscribe",
+      "type": "user",
+      "desc": "cancels subscription to the requested groups",
+      "syntax": "(Groups)"
+    },
+    "subscribepv": {
+      "func": "subscribe_pv",
+      "type": "user",
+      "desc": "subscribes you to the requested individual PV (paired with its group)",
+      "syntax": "(PV) (Group)",
+      "min_args": 2,
+      "max_args": 2
+    },
+    "unsubscribepv": {
+      "func": "unsubscribe_pv",
+      "type": "user",
+      "desc": "unsubscribes you to the requested individual PV (paired with its group)",
+      "syntax": "(PV) (Group)",
+      "min_args": 2,
+      "max_args": 2
+    },
+    "add": {
+        "func": "add_user",
+        "type": "user",
+        "desc": "requests administrators to add multiple users to a authorized personnel",
+        "syntax": "(Name:ChatID) (Team)",
+        "min_args": 2
+    },
+    "addteam": {
+        "func": "add_team",
+        "type": "user",
+        "desc": "requests administrators to register a new Team",
+        "syntax": "(AdminName:AdminID) (Team) (Users)",
+        "min_args": 3
+    },
+    "addpvgroup": {
+        "func": "add_group",
+        "type": "mons",
+        "desc": "requests administrators to register a new PV Group",
+        "syntax": "(Group) (PVs) (Maximum limit) (Minimum limit) (Timeout)",
+        "min_args": 5
+    },
+    "addpv": {
+        "func": "add_pv_to_group",
+        "type": "mons",
+        "desc": "requests administrators to register a new PV to an existing PV group or alter a PV limit",
+        "syntax": "(Group) (PV) (Maximum limit) (Minimum limit) (Timeout)",
+        "min_args": 5,
+        "max_args": 5
+    },
+    "removepv": {
+        "func": "remove_pv_from_group",
+        "type": "mons",
+        "desc": "requests administrators to remove PV from group",
+        "syntax": "(Group) (PV)",
+        "min_args": 2,
+        "max_args": 2
+    },
+    "changelog": {
+        "func": "changelog",
+        "type": "info",
+        "desc": "view changelog"
+    }
+  },
+  "teamadm_commands": {
+    "teams": {
+        "func": "get_teams",
+        "type": "info",
+        "desc": "sends a list with registered Teams"
+    },
+    "checkteam": {
+        "func": "get_team_info",
+        "type": "info",
+        "desc": "sends data pertaining to selected teams",
+        "syntax": "(Teams)"
+    },
+    "subscribeteam": {
+        "func": "subscribe_team",
+        "type": "user",
+        "desc": "subscribes the Team you administrate to the requested PVGroups",
+        "syntax": "(Team) (PVs/groups)",
+        "min_args": 2
+    },
+    "unsubscribeteam": {
+        "func": "unsubscribe_team",
+        "type": "user",
+        "desc": "unsubscribes the Team you administrate from the requested PVGroups",
+        "syntax": "(Team) (PVs/groups)",
+        "min_args": 2
+    },
+    "remove": {
+        "func": "remove_user",
+        "type": "user",
+        "desc": "removes the specified users from your Team",
+        "syntax": "(ChatIDs) (Team)",
+        "min_args": 2
+    }
+  },
+  "adm_commands": {
+    "removeteam": {
+        "func": "remove_team",
+        "type": "user",
+        "desc": "removes the specified team",
+        "syntax": "(Team)",
+        "max_args": 1
+    },
+    "removepvgroup": {
+        "func": "remove_group",
+        "type": "mons",
+        "desc": "removes PV Groups that are not being used",
+        "syntax": "(PV groups)"
+    },
+    "settimeout": {
+        "func": "set_timeout",
+        "type": "mons",
+        "desc": "alters a PV group's notification timeout",
+        "syntax": "(PV group) (Timeout)",
+        "min_args": 2,
+        "max_args": 2
+    },
+    "enabledisconnectmon": {
+        "func": "enable_disc_mon",
+        "type": "mons",
+        "desc": "enables disconnect monitoring",
+        "syntax": "(PVs)"
+    },
+    "disabledisconnectmon": {
+        "func": "disable_disc_mon",
+        "type": "mons",
+        "desc": "disables disconnect monitoring",
+        "syntax": "(PVs)"
+    }
+  }
+}
