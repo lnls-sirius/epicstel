@@ -74,7 +74,7 @@
       "func": "subscribe_pv",
       "type": "user",
       "desc": "subscribes you to the requested individual PV (paired with its group)",
-      "syntax": "(PV) (Group)",
+      "syntax": "(Group) (PV)",
       "min_args": 2,
       "max_args": 2
     },
@@ -82,7 +82,7 @@
       "func": "unsubscribe_pv",
       "type": "user",
       "desc": "unsubscribes you to the requested individual PV (paired with its group)",
-      "syntax": "(PV) (Group)",
+      "syntax": "(Group) (PV)",
       "min_args": 2,
       "max_args": 2
     },

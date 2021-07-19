@@ -7,8 +7,7 @@ from logging.handlers import RotatingFileHandler
 import epics
 from bson import ObjectId
 from telegram import Update
-from telegram.ext import (CallbackContext, CommandHandler, Filters,
-                          MessageHandler, Updater)
+from telegram.ext import CallbackContext, CommandHandler, Filters, MessageHandler, Updater
 
 import epicstel.static_text as static_text
 from epicstel import __version__

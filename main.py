@@ -12,7 +12,7 @@ from epicstel.bot import TelBot
 from epicstel.monitor import Monitor
 
 if __name__ == "__main__":
-    client = MongoClient("mongodb://localhost:27017/") # Not actual DB address
+    client = MongoClient("mongodb://localhost:27040/")
     client.admin.authenticate(sys.argv[4], sys.argv[5])
 
     warnings.simplefilter(action="ignore", category=InsecureRequestWarning)

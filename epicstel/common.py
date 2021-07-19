@@ -84,6 +84,9 @@ def forward_to_adm(self, update: Update):
 
 def has_loading(func):
     def wrap(self, update: Update, cont: CallbackContext) -> Callable:
+        if not update.message.chat_id:
+            return
+
         if not self.bot.users.find_one({"chat_id": update.message.chat_id}):
             self.logger.debug(
                 "User {} ({}) attempted to run a command despite not being in the authorized personnel list.".format(

@@ -6,8 +6,7 @@ import requests
 from bson import ObjectId
 
 from epicstel.bot import TelBot
-from epicstel.static_text import (disconnect_warning, monitor_warning,
-                                  pv_archived)
+from epicstel.static_text import disconnect_warning, monitor_warning, pv_archived
 
 
 class Monitor:
@@ -31,11 +30,11 @@ class Monitor:
             now = time.time()
 
             if now - self.last_ca_update > 120:
-                os.environ["EPICS_CA_ADDR_LIST"] = " ".join(
-                    self.bot.configs.find_one({"config": "EPICS_CA_ADDR_LIST"}).get("ips")
-                )
-                self.logger.info("Updated CA ADDR list: {}".format(os.environ["EPICS_CA_ADDR_LIST"]))
-                self.last_ca_update = now
+                ip_list = " ".join(self.bot.configs.find_one({"config": "EPICS_CA_ADDR_LIST"}).get("ips"))
+
+                if os.environ["EPICS_CA_ADDR_LIST"] != ip_list:
+                    self.logger.info("Updated CA ADDR list: {}".format(os.environ["EPICS_CA_ADDR_LIST"]))
+                    self.last_ca_update = now
 
             for user in self.bot.users.find(
                 {"$or": [{"pvs": {"$elemMatch": {"$exists": True}}}, {"groups": {"$elemMatch": {"$exists": True}}}]}
@@ -52,7 +51,10 @@ class Monitor:
                 pvs += self.bot.pvs.find(
                     {"_id": {"$in": [pv["ext_id"] for pv in user.get("pvs")]}, "value": {"$ne": None}}
                 )
-                pvs = [dict(t) for t in {tuple(d.items()) for d in pvs}]  # Remove duplicates
+
+                pvs = [
+                    dict(t) for t in {tuple(d.items()) for d in pvs if d["_id"] not in user.get("ignore")}
+                ]  # Remove duplicates and ignored PVs
 
                 for pv in pvs:
                     if now > pv.get("last_alert") + pv.get("timeout") * 60:

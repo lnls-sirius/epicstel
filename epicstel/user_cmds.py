@@ -105,7 +105,14 @@ class UserCommands:
         self.bot.users.update_one(
             {"chat_id": chat_id},
             {
-                "$setOnInsert": {"pvs": [], "groups": [], "adminof": [], "chat_id": chat_id, "fullname": name},
+                "$setOnInsert": {
+                    "pvs": [],
+                    "groups": [],
+                    "adminof": [],
+                    "ignore": [],
+                    "chat_id": chat_id,
+                    "fullname": name,
+                },
                 "$addToSet": {"teams": team},
             },
             upsert=True,
@@ -156,14 +163,18 @@ class UserCommands:
 
     @has_loading
     def subscribe_pv(self, update: Update, cont: CallbackContext) -> None:
-        pv, group = cont.args[0], cont.args[1]
+        pv, group = cont.args[1], cont.args[0]
         existing_pv = self.bot.pvs.find_one({"name": pv, "group": group})
 
         if not existing_pv:
             update.message.reply_text("`{}` does not exist inside group `{}`".format(pv, group), parse_mode="markdown")
             return
 
-        if not self.bot.users.update_one(
+        if self.bot.users.update_one(
+            {"chat_id": update.effective_user.id}, {"$pull": {"ignore": ObjectId(existing_pv.get("_id"))}}
+        ).modified_count:
+            update.message.reply_text("Successfully unignored `{}`".format(pv), parse_mode="markdown")
+        elif not self.bot.users.update_one(
             {"chat_id": update.effective_user.id},
             {"$addToSet": {"pvs": {"name": pv, "group": group, "ext_id": ObjectId(existing_pv.get("_id"))}}},
         ).modified_count:
@@ -173,9 +184,18 @@ class UserCommands:
 
     @has_loading
     def unsubscribe_pv(self, update: Update, cont: CallbackContext) -> None:
-        pv, group = cont.args[0], cont.args[1]
+        pv, group = cont.args[1], cont.args[0]
+        existing_pv = self.bot.pvs.find_one({"name": pv, "group": group})
 
-        if not self.bot.users.update_one(
+        if (
+            existing_pv
+            and self.bot.users.update_one(
+                {"chat_id": update.effective_user.id},
+                {"$addToSet": {"ignore": ObjectId(existing_pv.get("_id"))}},
+            ).modified_count
+        ):
+            update.message.reply_text("Successfully ignoring `{}`".format(pv), parse_mode="markdown")
+        elif not self.bot.users.update_one(
             {"chat_id": update.effective_user.id}, {"$pull": {"pvs": {"name": pv, "group": group}}}
         ).modified_count:
             update.message.reply_text("You're already not subscribed to `{}`".format(pv), parse_mode="markdown")

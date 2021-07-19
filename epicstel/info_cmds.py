@@ -225,6 +225,10 @@ class InfoCommands:
             )
             start = end - timedelta(minutes=30)
 
+        if start > end:
+            update.message.reply_text("The starting date must come before the end date")
+            return
+
         min_date, max_date, valid = None, None, False
         plotted_egus = []
         side = "right"
@@ -247,6 +251,12 @@ class InfoCommands:
                     datetime.strftime(end, static_text.output_date),
                 )
             ).json()
+
+            if not len(req[0]["data"]):
+                update.message.reply_text(
+                    "There was no data for `{}` in the selected period".format(pv), parse_mode="markdown"
+                )
+                return
 
             egu = req[0]["meta"].get("EGU") or "No label"
             pv_data = [v["val"] for v in req[0]["data"]]
