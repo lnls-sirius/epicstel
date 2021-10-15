@@ -65,11 +65,12 @@ Limit:   $limit```"""
 
 check_me = Template(
     """👤 Your user information:```
-Username:  $user
-Chat ID:   $id
-Teams:     $teams
-PV groups: $pvgroups
-PVs:       $pvs ```"""
+Username:    $user
+Chat ID:     $id
+Teams:       $teams
+PV groups:   $pvgroups
+PVs:         $pvs 
+Ignored PVs: $ignored```"""
 )
 
 check_team = Template(
@@ -121,3 +122,5 @@ input_date_long = "%Y/%m/%d-%H:%M:%S"
 input_date_short = "%Y/%m/%d"
 
 output_date = "%Y-%m-%dT%H:%M:%S.000Z"
+
+bbb_disconnected = Template("""⚠️ Control node *$BBB* has disconnected!""")

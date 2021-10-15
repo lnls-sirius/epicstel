@@ -1,12 +1,27 @@
 import json
 import os
 import time
+import redis
 
 import requests
 from bson import ObjectId
 
 from epicstel.bot import TelBot
-from epicstel.static_text import disconnect_warning, monitor_warning, pv_archived
+from epicstel.static_text import disconnect_warning, monitor_warning, pv_archived, bbb_disconnected
+
+SERVER_LIST = [
+    "10.0.38.59",
+    "10.0.38.46",
+    "10.0.38.42",
+    "10.128.153.81",
+    "10.128.153.82",
+    "10.128.153.83",
+    "10.128.153.84",
+    "10.128.153.85",
+    "10.128.153.86",
+    "10.128.153.87",
+    "10.128.153.88",
+]
 
 
 class Monitor:
@@ -22,6 +37,30 @@ class Monitor:
         self.url = "https://10.0.38.42/mgmt/bpl"
         self.times = config["warn_times"]
         self.last_ca_update = 0
+
+        self.find_active()
+
+    def find_active(self):
+        while True:
+            for server in SERVER_LIST:
+                try:
+                    remote_db = redis.StrictRedis(host=server, port=6379, socket_timeout=4)
+                    remote_db.ping()
+                    self.logger.info("Connected to {} Redis Server".format(server))
+                    self.redis_db = remote_db
+                    return
+                except redis.exceptions.ConnectionError:
+                    self.logger.warning("{} Redis server is disconnected".format(server))
+                except redis.exceptions.ResponseError:
+                    self.logger.warning("Could not connect to {}, a response error has ocurred".format(server))
+                    time.sleep(30)
+                except Exception as e:
+                    self.logger.warning("Could not connect to {}: {}".format(server, e))
+                    time.sleep(50)
+                continue
+
+            self.logger.info("Server not found. Retrying to connect in 10 seconds...")
+            time.sleep(10)
 
     def main(self) -> None:
         while True:
@@ -116,12 +155,30 @@ class Monitor:
 
         return time_string
 
-    # Monitors for disconnected PVs and pauses them if they've been disconnected long enough
+    # Monitors for disconnected PVs (and Beaglebones) and pauses PVs if they've been disconnected long enough
     def disc(self) -> None:
         # Times in seconds for 1 week, 2 days and 10 days.
         warn_times = self.times
 
         while True:
+            try:
+                disconnectedBBBs = self.redis_db.smembers("DisconnectedWarn")
+                if disconnectedBBBs:
+                    for user in self.bot.users.find({"bbbWarn": True}):
+                        print(user)
+                        for bbb in disconnectedBBBs:
+                            bbb_info = bbb.decode()[4:].split(":")
+                            full_str = "{} ({})".format(bbb_info[0], ":".join(bbb_info[1:]))
+                            self.bot.bot.send_message(
+                                user.get("chat_id"),
+                                bbb_disconnected.safe_substitute(BBB=full_str),
+                                parse_mode="markdown",
+                            )
+                            self.redis_db.srem("DisconnectedWarn", bbb)
+            except Exception as e:
+                print(e)
+                self.find_active()
+
             # Used to guarantee PVs are truly disconnected,
             # as the bot failing to perform a CAGET request could mean other issues.
             disconnected_PVs = requests.get("{}/getCurrentlyDisconnectedPVs".format(self.url), verify=False).json()
@@ -158,14 +215,8 @@ class Monitor:
 
                         self.bot.pvs.update_one(local_pv._id, {"d_time": 0, "d_count": 0})
                     else:
-                        last_con_date = (
-                            last_event.strftime("%Y-%m-%d %H:%M:%S")
-                            if pv["lastKnownEvent"] != "Never"
-                            else "Never Connected"
-                        )
-
                         warning_msg = disconnect_warning.safe_substitute(
-                            pv=pv["pvName"], disc_date=last_con_date, days=self.convert_time(rem_time)
+                            pv=pv["pvName"], disc_date=pv["lastKnownEvent"], days=self.convert_time(rem_time)
                         )
 
                         self.bot.pvs.update_one(local_pv._id, {"d_time": current_time, "$inc": {"d_count": 1}})

@@ -243,3 +243,21 @@ class MonCommands:
 
         self.logger.info("{} added new group: {}".format(update.effective_user.username, to_add_group))
         update.message.reply_text("New PV group added: `{}`".format(to_add_group), parse_mode="markdown")
+
+    @has_loading
+    def subscribe_bbb(self, update: Update, _: CallbackContext) -> None:
+        if not self.bot.users.update_one(
+            {"chat_id": update.effective_user.id}, {"$set": {"bbbWarn": True}}
+        ).modified_count:
+            update.message.reply_text("You're already monitoring BBB disconnections")
+        else:
+            update.message.reply_text("You're now monitoring BBB disconnections!")
+
+    @has_loading
+    def unsubscribe_bbb(self, update: Update, _: CallbackContext) -> None:
+        if not self.bot.users.update_one(
+            {"chat_id": update.effective_user.id}, {"$set": {"bbbWarn": False}}
+        ).modified_count:
+            update.message.reply_text("You're already not monitoring BBB disconnections")
+        else:
+            update.message.reply_text("You're no longer monitoring BBB disconnections!")

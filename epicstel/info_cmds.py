@@ -58,12 +58,19 @@ class InfoCommands:
         user_teams = ", ".join(user.get("teams"))
         pv_groups = ", ".join(user.get("groups"))
         pvs = ", ".join(["{} ({})".format(pv.get("name"), pv.get("group")) for pv in user.get("pvs")])
+        ignored_pvs = ", ".join(
+            [
+                "{} ({})".format(pv.get("name"), pv.get("group"))
+                for pv in self.bot.pvs.find({"_id": {"$in": user.get("ignore")}})
+            ]
+        )
         answer = static_text.check_me.safe_substitute(
             user=update.effective_user.full_name,
             id=update.effective_user.id,
             teams=user_teams,
             pvgroups=pv_groups,
             pvs=pvs,
+            ignored=ignored_pvs,
         )
 
         update.message.reply_text(answer, parse_mode="markdown")
@@ -252,7 +259,7 @@ class InfoCommands:
                 )
             ).json()
 
-            if not len(req[0]["data"]):
+            if not req[0]["data"]:
                 update.message.reply_text(
                     "There was no data for `{}` in the selected period".format(pv), parse_mode="markdown"
                 )
