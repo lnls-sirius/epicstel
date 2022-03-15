@@ -74,6 +74,7 @@ class Monitor:
                 if os.environ["EPICS_CA_ADDR_LIST"] != ip_list:
                     self.logger.info("Updated CA ADDR list: {}".format(os.environ["EPICS_CA_ADDR_LIST"]))
                     self.last_ca_update = now
+                    os.environ["EPICS_CA_ADDR_LIST"] = ip_list
 
             for user in self.bot.users.find(
                 {"$or": [{"pvs": {"$elemMatch": {"$exists": True}}}, {"groups": {"$elemMatch": {"$exists": True}}}]}
