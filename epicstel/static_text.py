@@ -45,11 +45,11 @@ An error occured while formatting the forward string, maybe you mistyped.
 Try again using the format: /forward (chatID) (message)"""
 
 links = """For more information check the [Sharepoint page](https://cnpemcamp.sharepoint.com/sites/iot/SitePages/EPICSTel.aspx)
-To report bugs or errors, send a message to @patriciahn or @g\_freitas !"""
+To report bugs or errors, send a message to @patriciahn or @gffreitas !"""
 
 greeting = Template(
     """Hello there, $NAME! 😊
-*Welcome to EPICSTel, an EPICS PV info Bot from CNPEM/IOT group!*
+*Welcome to EPICSTel, an EPICS PV info Bot from CNPEM/SEI group!*
 Here are my valid commands:"""
 )
 
