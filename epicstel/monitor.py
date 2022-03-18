@@ -163,19 +163,17 @@ class Monitor:
 
         while True:
             try:
-                disconnectedBBBs = self.redis_db.smembers("DisconnectedWarn")
-                if disconnectedBBBs:
-                    for bbb in disconnectedBBBs:
-                        for user in self.bot.users.find({"bbbWarn": True}):
-                            bbb_info = bbb.decode()[4:].split(":")
-                            full_str = "{} ({})".format(bbb_info[0], ":".join(bbb_info[1:]))
-                            self.bot.bot.send_message(
-                                user.get("chat_id"),
-                                bbb_disconnected.safe_substitute(BBB=full_str),
-                                parse_mode="markdown",
-                            )
-                    
-                    self.redis_db.delete("DisconnectedWarn")
+                for bbb in self.redis_db.smembers("DisconnectedWarn"):
+                    for user in self.bot.users.find({"bbbWarn": True}):
+                        bbb_info = bbb.decode()[4:].split(":")
+                        full_str = "{} ({})".format(bbb_info[0], ":".join(bbb_info[1:]))
+                        self.bot.bot.send_message(
+                            user.get("chat_id"),
+                            bbb_disconnected.safe_substitute(BBB=full_str),
+                            parse_mode="markdown",
+                        )
+
+                self.redis_db.delete("DisconnectedWarn")
             except Exception as e:
                 print(e)
                 self.find_active()
