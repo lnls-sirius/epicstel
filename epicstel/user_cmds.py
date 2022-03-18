@@ -57,8 +57,6 @@ class UserCommands:
         self.bot.teams.insert_one({"team": team_name, "pvs": [], "groups": []})
         self.bot.users.update_one({"chat_id": adm_id}, {"$addToSet": {"adminof": team_name}})
 
-        print(parsed_users)
-
         for adm in self.bot.users.find({"teams": "ADM"}):
             update.message.bot.send_message(
                 adm.get("chat_id"),

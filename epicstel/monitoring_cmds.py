@@ -212,7 +212,6 @@ class MonCommands:
         added_any = False
         for pv_name in to_add_list:
             if caget(pv_name, timeout=0.2) is not None:
-                print(pv_name)
                 # Will this always be an insert?
                 self.bot.pvs.update_one(
                     {"name": pv_name, "group": to_add_group},
