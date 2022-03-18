@@ -165,9 +165,8 @@ class Monitor:
             try:
                 disconnectedBBBs = self.redis_db.smembers("DisconnectedWarn")
                 if disconnectedBBBs:
-                    for user in self.bot.users.find({"bbbWarn": True}):
-                        print(user)
-                        for bbb in disconnectedBBBs:
+                    for bbb in disconnectedBBBs:
+                        for user in self.bot.users.find({"bbbWarn": True}):
                             bbb_info = bbb.decode()[4:].split(":")
                             full_str = "{} ({})".format(bbb_info[0], ":".join(bbb_info[1:]))
                             self.bot.bot.send_message(
@@ -175,7 +174,8 @@ class Monitor:
                                 bbb_disconnected.safe_substitute(BBB=full_str),
                                 parse_mode="markdown",
                             )
-                            self.redis_db.srem("DisconnectedWarn", bbb)
+                    
+                    self.redis_db.delete("DisconnectedWarn")
             except Exception as e:
                 print(e)
                 self.find_active()
