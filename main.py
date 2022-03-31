@@ -35,7 +35,7 @@ if __name__ == "__main__":
         t_disc.start()
         while True:
             sleep(10)
-            if not t.is_alive():
+            if not t.is_alive() or not t_disc.is_alive():
                 bot.thread_is_alive = False
                 bot.bot.send_message("403822264", "Thread is dead")
                 bot.logger.error("Thread died")
