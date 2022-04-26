@@ -174,14 +174,14 @@ class Monitor:
                         )
 
                 self.redis_db.delete("DisconnectedWarn")
-            except Exception as e:
-                print(e)
+            except Exception:
                 self.find_active()
 
             # Used to guarantee PVs are truly disconnected,
             # as the bot failing to perform a CAGET request could mean other issues.
+
             disconnected_PVs = requests.get("{}/getCurrentlyDisconnectedPVs".format(self.url), verify=False).json()
-            session = self.login()
+            # session = self.login()
 
             current_time = time.time()
 
@@ -190,35 +190,37 @@ class Monitor:
                 if not local_pv:
                     continue
 
-                last_event = float(pv["noConnectionAsOfEpochSecs"])
+                # last_event = float(pv["noConnectionAsOfEpochSecs"])
 
-                if last_event > local_pv.get("d_time") or local_pv.get("d_count") == 4:
-                    self.bot.pvs.update_one(local_pv._id, {"d_time": 0, "d_count": 0})
-                    continue
+                # if last_event > local_pv.get("d_time") or local_pv.get("d_count") == 4:
+                #    self.bot.pvs.update_one({"_id": local_pv["_id"]}, {"$set": {"d_time": 0, "d_count": 0}})
+                #    continue
 
                 next_warn = warn_times[local_pv.get("d_count")]
                 time_dif = current_time - local_pv.get("d_time")
 
                 if time_dif > next_warn:
-                    chat_ids = self.bot.users.find({"pvs": {"name": {"$in": pv["pvName"]}}})
-                    if len(chat_ids) == 0:
-                        continue
+                    chat_ids = self.bot.users.find(
+                        {"$or": [{"pvs": {"name": {"$in": pv["pvName"]}}}, {"groups": local_pv["group"]}]}
+                    )
 
                     rem_time = warn_times[2] if local_pv.get("d_count") == 1 else warn_times[1] + warn_times[2]
 
                     if local_pv.get("d_count") > 1:
-                        session.get("{}/pauseArchivingPV?pv={}".format(self.url, pv["pvName"]))
+                        # session.get("{}/pauseArchivingPV?pv={}".format(self.url, pv["pvName"]))
                         warning_msg = pv_archived.safe_substitute(
                             pv=pv["pvName"], disc_time=self.convert_time(rem_time + warn_times[0])
                         )
 
-                        self.bot.pvs.update_one(local_pv._id, {"d_time": 0, "d_count": 0})
+                        self.bot.pvs.update_one({"_id": local_pv["_id"]}, {"$set": {"d_time": 0, "d_count": 0}})
                     else:
                         warning_msg = disconnect_warning.safe_substitute(
                             pv=pv["pvName"], disc_date=pv["lastKnownEvent"], days=self.convert_time(rem_time)
                         )
 
-                        self.bot.pvs.update_one(local_pv._id, {"d_time": current_time, "$inc": {"d_count": 1}})
+                        self.bot.pvs.update_one(
+                            {"_id": local_pv["_id"]}, {"$set": {"d_time": current_time}, "$inc": {"d_count": 1}}
+                        )
                     for c in chat_ids:
                         self.bot.bot.send_message(c.get("chat_id"), warning_msg, parse_mode="markdown")
 

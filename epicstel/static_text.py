@@ -49,7 +49,7 @@ To report bugs or errors, send a message to @patriciahn or @gffreitas !"""
 
 greeting = Template(
     """Hello there, $NAME! 😊
-*Welcome to EPICSTel, an EPICS PV info Bot from CNPEM/SEI group!*
+*Welcome to EPICSTel, an EPICS PV info Bot from CNPEM/IOT group!*
 Here are my valid commands:"""
 )
 
@@ -108,10 +108,10 @@ Last Event: $last_event```"""
 
 disconnect_warning = Template(
     """⚠️ PV *$pv* is disconnected since *$disc_date*.
-There are *$days* remaining until the PV is considered inactive and archived."""
+There are *$days* remaining until the PV is considered inactive and paused."""
 )
 
-pv_archived = Template("PV *$pv* has been archived, as it has been inactive for a period longer than $disc_time.")
+pv_archived = Template("PV *$pv* has been paused, as it has been inactive for a period longer than $disc_time.")
 
 added_personnel = Template(
     """You've been added to the Bot's authorized personnel

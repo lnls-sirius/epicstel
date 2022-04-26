@@ -39,7 +39,7 @@
       "func": "plot", 
       "type": "info",
       "desc": "plots out data for given PVs. Time format: YYYY/MM/DD-HH:MM:SS or YYYY/MM/DD",
-      "syntax": "(PVs) (Start Time - opt.) (End Time - opt.)"
+      "syntax": "(PVs) (start time - opt.) (end time - opt.)"
     },
     "forward": {
         "func": "forward",
@@ -89,7 +89,7 @@
     "add": {
         "func": "add_user",
         "type": "user",
-        "desc": "requests administrators to add multiple users to authorized personnel",
+        "desc": "requests administrators to add multiple users to a authorized personnel",
         "syntax": "(Name:ChatID) (Team)",
         "min_args": 2
     },
@@ -104,14 +104,14 @@
         "func": "add_group",
         "type": "mons",
         "desc": "requests administrators to register a new PV Group",
-        "syntax": "(Group) (PVs) (Maximum limit) (Minimum limit) (Interval between messages in minutes)",
+        "syntax": "(Group) (PVs) (Maximum limit) (Minimum limit) (Timeout)",
         "min_args": 5
     },
     "addpv": {
         "func": "add_pv_to_group",
         "type": "mons",
         "desc": "requests administrators to register a new PV to an existing PV group or alter a PV limit",
-        "syntax": "(Group) (PV) (Maximum limit) (Minimum limit) (Interval between messages in minutes)",
+        "syntax": "(Group) (PV) (Maximum limit) (Minimum limit) (Timeout)",
         "min_args": 5,
         "max_args": 5
     },
@@ -127,7 +127,17 @@
         "func": "changelog",
         "type": "info",
         "desc": "view changelog"
-    }
+    },
+    "unsubscribebbb": {
+      "func": "unsubscribe_bbb",
+      "type": "mons",
+      "desc": "unsubscribe to BBB disconnection monitoring"
+    },
+    "subscribebbb": {
+      "func": "subscribe_bbb",
+      "type": "mons",
+      "desc": "subscribe to BBB disconnection monitoring"
+}
   },
   "teamadm_commands": {
     "teams": {
@@ -180,8 +190,8 @@
     "settimeout": {
         "func": "set_timeout",
         "type": "mons",
-        "desc": "alters a PV group's notification timeout (interval between messages in minutes)",
-        "syntax": "(PV group) (Interval between messages in minutes)",
+        "desc": "alters a PV group's notification timeout",
+        "syntax": "(PV group) (Timeout)",
         "min_args": 2,
         "max_args": 2
     },

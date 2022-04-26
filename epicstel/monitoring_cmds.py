@@ -44,7 +44,7 @@ class MonCommands:
 
         if desired_groups:
             self.bot.pvs.update_many({"name": {"$in": desired_groups}}, {"$set": {"d_count": 4}})
-            modified = desired_groups.join(", ")
+            modified = ", ".join(desired_groups)
             return_message = "You have {} monitoring to `{}`\n".format("enabled" if toggle else "disabled", modified)
 
         update.message.reply_text(return_message + errors, parse_mode="markdown")

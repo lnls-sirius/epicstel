@@ -87,6 +87,10 @@ class TelBot(Updater):
             err_str = "Error from user while running `{}`: ``` {} ```".format(update.message.text, tb_string)
             update.message.reply_text("Sorry! An error has occurred. Please try again later.")
         else:
+            if "HTTPError" in cont.error or "Timed out" in cont.error:
+                time.sleep(5)
+                os._exit(0)
+
             err_str = "Error: {}".format(cont.error)
 
         self.logger.error(err_str)

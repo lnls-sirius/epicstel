@@ -20,8 +20,8 @@ if __name__ == "__main__":
     debug = sys.argv[-1] == "debug"
 
     # Needs to be done, cannot replace pyepics printf method
-    if not debug:
-        sys.stdout = open("data/stdout.log", "w")
+    # if not debug:
+    #    sys.stdout = open("data/stdout.log", "w")
 
     bot = TelBot(sys.argv[1], client, debug)
     mon = Monitor(bot, sys.argv[2], sys.argv[3])
@@ -39,7 +39,7 @@ if __name__ == "__main__":
                 bot.thread_is_alive = False
                 bot.bot.send_message("403822264", "Thread is dead")
                 bot.logger.error("Thread died")
-                break
+                quit()
     except Exception as e:
         bot.logger.info(e, "Good night")
     except KeyboardInterrupt:
