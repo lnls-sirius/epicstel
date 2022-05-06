@@ -259,7 +259,7 @@ class InfoCommands:
                 )
             ).json()
 
-            if not req[0]["data"]:
+            if not len(req) or not req[0]["data"]:
                 update.message.reply_text(
                     "There was no data for `{}` in the selected period".format(pv), parse_mode="markdown"
                 )
