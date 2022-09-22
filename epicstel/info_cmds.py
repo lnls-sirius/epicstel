@@ -323,7 +323,7 @@ class InfoCommands:
 
     @has_loading
     def changelog(self, update: Update, _: CallbackContext) -> None:
-        resp = requests.get("https://gitlab.cnpem.br/IoT/epicstel/raw/master/CHANGELOG.md").content.decode()
+        resp = requests.get("https://github.com/lnls-sirius/epicstel/blob/master/CHANGELOG.md").content.decode()
 
         # Matches and replaces [] and ### characters with Telegram markdown
         changelog = re.sub(r"[\[\]]", "*", resp).split("\n## ")[1]
